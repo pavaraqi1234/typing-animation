@@ -140,6 +140,70 @@
             line-height: 1.8;
             word-wrap: break-word;
             white-space: pre-wrap;
+            position: relative;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background-color: #667eea;
+            margin-right: 2px;
+            vertical-align: middle;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .templates-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .template-btn {
+            background: #6c757d;
+            padding: 8px 15px;
+            font-size: 13px;
+            margin: 5px;
+        }
+
+        .sound-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .sound-toggle input[type="checkbox"] {
+            width: auto;
         }
 
         .btn-group {
@@ -174,6 +238,16 @@
         <h1>✨ تایپینگ انیمیشن ساز ✨</h1>
         
         <div class="controls">
+            <div class="templates-section">
+                <label>قالب‌های آماده:</label>
+                <div class="btn-group" style="margin-top: 10px;">
+                    <button class="template-btn" onclick="loadTemplate('welcome')">🎉 خوش‌آمدگویی</button>
+                    <button class="template-btn" onclick="loadTemplate('code')">💻 کد نویسی</button>
+                    <button class="template-btn" onclick="loadTemplate('poem')">📜 شعر</button>
+                    <button class="template-btn" onclick="loadTemplate('promo')">📢 تبلیغاتی</button>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label for="textInput">متن خود را وارد کنید:</label>
                 <textarea id="textInput" placeholder="متن مورد نظر خود را اینجا بنویسید...">به وبلاگ پاوارقیها خوش آمدید!
@@ -233,9 +307,19 @@
                     <label for="areaHeight">ارتفاع ناحیه نمایش (پیکسل):</label>
                     <input type="number" id="areaHeight" value="400" min="200" max="800">
                 </div>
+
+                <div class="form-group">
+                    <label for="cursorColor">رنگ نشانگر:</label>
+                    <input type="color" id="cursorColor" value="#667eea">
+                </div>
             </div>
 
-            <div class="btn-group">
+            <div class="sound-toggle">
+                <input type="checkbox" id="soundEnabled">
+                <label for="soundEnabled" style="margin: 0; cursor: pointer;">🔊 پخش صدای تایپ</label>
+            </div>
+
+            <div class="btn-group" style="margin-top: 20px;">
                 <button onclick="startTyping()">▶ شروع انیمیشن</button>
                 <button class="btn-secondary" onclick="stopTyping()">⏹ توقف</button>
                 <button class="btn-secondary" onclick="clearText()">🗑 پاک کردن</button>
@@ -246,9 +330,14 @@
         <div class="preview-container">
             <div class="preview-header">
                 <span class="preview-title">پیش‌نمایش:</span>
+                <button class="btn-secondary" onclick="copyShareLink()" style="padding: 8px 15px; font-size: 13px;">🔗 کپی لینک</button>
             </div>
             <div id="typingArea">
                 <div id="typedText"></div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+                <div class="progress-text" id="progressText">0%</div>
             </div>
         </div>
     </div>
@@ -259,6 +348,65 @@
         let charIndex = 0;
         let customFontData = null;
         let customFontName = null;
+        let audioContext = null;
+        let isTyping = false;
+
+        // Templates
+        const templates = {
+            welcome: `به وبسایت ما خوش آمدید! 🎉
+
+ما بهترین خدمات را به شما ارائه می‌دهیم.
+
+برای شروع کلیک کنید.`,
+            code: `function hello() {
+    console.log("Hello World!");
+    return true;
+}
+
+// کد شما اینجا اجرا می‌شود`,
+            poem: `توانا بود هر که دانا بود\nز دانش دل پیر برنا بود\n\nبنام خداوند جان و خرد\nکزین برتر اندیشه برنگذرد`,
+            promo: `🔥 پیشنهاد ویژه! 🔥\n\nتا ۵۰٪ تخفیف روی تمام محصولات\n\nفقط تا پایان هفته!\n\nهمین حالا خرید کنید!`
+        };
+
+        function loadTemplate(type) {
+            document.getElementById('textInput').value = templates[type];
+            stopTyping();
+            document.getElementById('typedText').innerHTML = '';
+            updateProgress(0);
+        }
+
+        // Sound effect using Web Audio API
+        function playTypeSound() {
+            if (!document.getElementById('soundEnabled').checked) return;
+            
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 600 + Math.random() * 200;
+                oscillator.type = 'square';
+                
+                gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.05);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').textContent = Math.round(percent) + '%';
+        }
 
         // مدیریت آپلود فونت شخصی
         document.getElementById('customFont').addEventListener('change', function(e) {
@@ -333,6 +481,7 @@
             const bgColor = document.getElementById('bgColor').value;
             const width = document.getElementById('areaWidth').value;
             const height = document.getElementById('areaHeight').value;
+            const cursorColor = document.getElementById('cursorColor').value;
             
             // اعمال تنظیمات
             const typingArea = document.getElementById('typingArea');
@@ -346,28 +495,68 @@
             typedText.style.fontSize = fontSize + 'px';
             typedText.style.color = textColor;
             typedText.style.lineHeight = '1.8';
-            typedText.style.whiteSpace = 'pre-wrap'; // حفظ خطوط جدید
+            typedText.style.whiteSpace = 'pre-wrap';
             
-            // شروع انیمیشن تایپینگ
+            // به‌روزرسانی رنگ نشانگر
+            const style = document.createElement('style');
+            style.id = 'cursorStyle';
+            style.textContent = `.cursor { background-color: ${cursorColor} !important; }`;
+            const oldStyle = document.getElementById('cursorStyle');
+            if (oldStyle) oldStyle.remove();
+            document.head.appendChild(style);
+            
+            // شروع انیمیشن تایپینگ با استفاده از DocumentFragment برای بهینه‌سازی
             currentText = text;
             charIndex = 0;
             typedText.innerHTML = '';
+            isTyping = true;
+            updateProgress(0);
+            
+            // ایجاد نشانگر چشمک‌زن
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor';
+            cursor.id = 'typingCursor';
+            typedText.appendChild(cursor);
+            
+            const totalChars = currentText.length;
             
             typingInterval = setInterval(() => {
                 if (charIndex < currentText.length) {
                     const char = currentText.charAt(charIndex);
+                    const cursorElement = document.getElementById('typingCursor');
+                    
                     // تبدیل کاراکترهای خاص به HTML
+                    let charElement;
                     if (char === '\n') {
-                        typedText.innerHTML += '<br>';
+                        charElement = document.createElement('br');
                     } else if (char === ' ') {
-                        typedText.innerHTML += '&nbsp;';
+                        charElement = document.createTextNode('\u00A0');
                     } else {
-                        typedText.innerHTML += char;
+                        charElement = document.createTextNode(char);
                     }
+                    
+                    // درج قبل از نشانگر
+                    if (cursorElement) {
+                        typedText.insertBefore(charElement, cursorElement);
+                    } else {
+                        typedText.appendChild(charElement);
+                    }
+                    
+                    playTypeSound();
                     charIndex++;
+                    
+                    // به‌روزرسانی نوار پیشرفت
+                    const progress = (charIndex / totalChars) * 100;
+                    updateProgress(progress);
                 } else {
                     clearInterval(typingInterval);
                     typingInterval = null;
+                    isTyping = false;
+                    updateProgress(100);
+                    
+                    // حذف نشانگر پس از اتمام
+                    const cursorElement = document.getElementById('typingCursor');
+                    if (cursorElement) cursorElement.remove();
                 }
             }, speed);
         }
@@ -384,6 +573,65 @@
             document.getElementById('typedText').innerHTML = '';
             document.getElementById('textInput').value = '';
             charIndex = 0;
+            isTyping = false;
+            updateProgress(0);
+        }
+
+        function copyShareLink() {
+            const text = document.getElementById('textInput').value;
+            const font = document.getElementById('fontSelect').value;
+            const fontSize = document.getElementById('fontSize').value;
+            const speed = document.getElementById('typingSpeed').value;
+            const textColor = document.getElementById('textColor').value;
+            const bgColor = document.getElementById('bgColor').value;
+            
+            const params = new URLSearchParams({
+                text: encodeURIComponent(text),
+                font: font,
+                size: fontSize,
+                speed: speed,
+                color: textColor.replace('#', ''),
+                bg: bgColor.replace('#', '')
+            });
+            
+            const shareUrl = window.location.origin + window.location.pathname + '?' + params.toString();
+            
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert('لینک با موفقیت کپی شد! حالا می‌توانید آن را با دیگران به اشتراک بگذارید.');
+            }).catch(() => {
+                // Fallback برای مرورگرهای قدیمی
+                const textarea = document.createElement('textarea');
+                textarea.value = shareUrl;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('لینک با موفقیت کپی شد!');
+            });
+        }
+
+        // بارگذاری تنظیمات از URL هنگام شروع
+        function loadFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            
+            if (params.has('text')) {
+                document.getElementById('textInput').value = decodeURIComponent(params.get('text'));
+            }
+            if (params.has('font')) {
+                document.getElementById('fontSelect').value = params.get('font');
+            }
+            if (params.has('size')) {
+                document.getElementById('fontSize').value = params.get('size');
+            }
+            if (params.has('speed')) {
+                document.getElementById('typingSpeed').value = params.get('speed');
+            }
+            if (params.has('color')) {
+                document.getElementById('textColor').value = '#' + params.get('color');
+            }
+            if (params.has('bg')) {
+                document.getElementById('bgColor').value = '#' + params.get('bg');
+            }
         }
 
         function saveAsHTML() {
@@ -496,6 +744,7 @@
 
         // شروع خودکار با متن نمونه هنگام بارگذاری صفحه
         window.onload = function() {
+            loadFromURL();
             startTyping();
         };
     </script>
