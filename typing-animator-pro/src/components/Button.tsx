@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import type { HTMLMotionProps } from 'framer-motion';
 import { Download, Film, Video } from 'lucide-react';
 import { cn } from '../utils/cn';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'ref'> {
   variant?: 'primary' | 'secondary' | 'outline';
   icon?: React.ReactNode;
   loading?: boolean;
@@ -51,7 +52,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           />
         )}
         {!loading && icon}
-        {children}
+        {children as React.ReactNode}
       </motion.button>
     );
   }
