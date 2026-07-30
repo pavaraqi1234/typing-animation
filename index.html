@@ -324,6 +324,8 @@
                 <button class="btn-secondary" onclick="stopTyping()">⏹ توقف</button>
                 <button class="btn-secondary" onclick="clearText()">🗑 پاک کردن</button>
                 <button class="btn-success" onclick="saveAsHTML()">💾 ذخیره به صورت HTML</button>
+                <button class="btn-success" onclick="exportAsGIF()">🎬 خروجی GIF</button>
+                <button class="btn-success" onclick="exportAsVideo()">🎥 خروجی ویدئو</button>
             </div>
         </div>
 
@@ -740,6 +742,263 @@
             URL.revokeObjectURL(url);
             
             alert('فایل HTML با موفقیت ذخیره شد!');
+        }
+
+        // Export as GIF using gif.js library (CDN)
+        async function exportAsGIF() {
+            const text = document.getElementById('textInput').value;
+            const width = parseInt(document.getElementById('areaWidth').value);
+            const height = parseInt(document.getElementById('areaHeight').value);
+            const fontSize = parseInt(document.getElementById('fontSize').value);
+            const fontFamily = document.getElementById('fontSelect').value;
+            const textColor = document.getElementById('textColor').value;
+            const bgColor = document.getElementById('bgColor').value;
+            const speed = parseInt(document.getElementById('typingSpeed').value);
+            
+            // Stop any ongoing animation
+            stopTyping();
+            
+            // Create a hidden canvas for rendering
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            
+            // Load gif.js from CDN
+            if (typeof GIF === 'undefined') {
+                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js');
+            }
+            
+            const gif = new GIF({
+                workers: 2,
+                quality: 10,
+                width: width,
+                height: height,
+                workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+            });
+            
+            // Calculate total characters and frames
+            const lines = text.split('\n');
+            let currentLine = 0;
+            let currentPosInLine = 0;
+            let displayedText = '';
+            
+            // Total frames based on typing speed
+            const totalChars = text.length;
+            const frameDelay = speed;
+            
+            // Render each frame
+            for (let i = 0; i <= totalChars; i++) {
+                // Clear canvas with background color
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, width, height);
+                
+                // Set font properties
+                ctx.font = `${fontSize}px ${fontFamily}`;
+                ctx.fillStyle = textColor;
+                ctx.textBaseline = 'top';
+                
+                // Render text with line wrapping
+                displayedText = text.substring(0, i);
+                renderTextWithWrapping(ctx, displayedText, 20, 20, width - 40, fontSize * 1.5);
+                
+                // Add cursor
+                const cursorX = calculateCursorX(ctx, displayedText, 20, width - 40);
+                const cursorY = calculateCursorY(ctx, displayedText, 20, width - 40, fontSize * 1.5);
+                ctx.fillStyle = document.getElementById('cursorColor').value;
+                ctx.fillRect(cursorX, cursorY, 2, fontSize);
+                
+                // Add frame to GIF
+                gif.addFrame(canvas, {copy: true, delay: frameDelay});
+            }
+            
+            // Show progress
+            const exportBtn = event.target;
+            const originalText = exportBtn.textContent;
+            exportBtn.textContent = '⏳ در حال ساخت GIF...';
+            exportBtn.disabled = true;
+            
+            gif.on('finished', function(blob) {
+                // Download the GIF
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'typing-animation.gif';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                exportBtn.textContent = originalText;
+                exportBtn.disabled = false;
+                alert('فایل GIF با موفقیت ذخیره شد!');
+            });
+            
+            gif.render();
+        }
+
+        // Export as Video using MediaRecorder API
+        async function exportAsVideo() {
+            const text = document.getElementById('textInput').value;
+            const width = parseInt(document.getElementById('areaWidth').value);
+            const height = parseInt(document.getElementById('areaHeight').value);
+            const fontSize = parseInt(document.getElementById('fontSize').value);
+            const fontFamily = document.getElementById('fontSelect').value;
+            const textColor = document.getElementById('textColor').value;
+            const bgColor = document.getElementById('bgColor').value;
+            const speed = parseInt(document.getElementById('typingSpeed').value);
+            
+            // Stop any ongoing animation
+            stopTyping();
+            
+            // Create a canvas for recording
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            
+            // Get canvas stream
+            const stream = canvas.captureStream(30); // 30 FPS
+            
+            // Check for supported media types
+            let mimeType = 'video/webm;codecs=vp9';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'video/webm';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/mp4';
+                }
+            }
+            
+            const recorder = new MediaRecorder(stream, {
+                mimeType: mimeType,
+                videoBitsPerSecond: 2500000 // 2.5 Mbps
+            });
+            
+            const chunks = [];
+            recorder.ondataavailable = e => chunks.push(e.data);
+            
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'typing-animation.webm';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                exportBtn.textContent = originalText;
+                exportBtn.disabled = false;
+                alert('فایل ویدئو با موفقیت ذخیره شد!');
+            };
+            
+            // Start recording
+            recorder.start();
+            
+            // Show progress
+            const exportBtn = event.target;
+            const originalText = exportBtn.textContent;
+            exportBtn.textContent = '⏳ در حال ضبط ویدئو...';
+            exportBtn.disabled = true;
+            
+            // Animate and record
+            let charIndex = 0;
+            const totalChars = text.length;
+            let displayedText = '';
+            
+            function recordFrame() {
+                if (charIndex > totalChars) {
+                    // Stop recording after a brief pause
+                    setTimeout(() => recorder.stop(), 500);
+                    return;
+                }
+                
+                // Clear canvas
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, width, height);
+                
+                // Set font properties
+                ctx.font = `${fontSize}px ${fontFamily}`;
+                ctx.fillStyle = textColor;
+                ctx.textBaseline = 'top';
+                
+                // Render text
+                displayedText = text.substring(0, charIndex);
+                renderTextWithWrapping(ctx, displayedText, 20, 20, width - 40, fontSize * 1.5);
+                
+                // Add blinking cursor
+                if (Math.floor(Date.now() / 500) % 2 === 0) {
+                    const cursorX = calculateCursorX(ctx, displayedText, 20, width - 40);
+                    const cursorY = calculateCursorY(ctx, displayedText, 20, width - 40, fontSize * 1.5);
+                    ctx.fillStyle = document.getElementById('cursorColor').value;
+                    ctx.fillRect(cursorX, cursorY, 2, fontSize);
+                }
+                
+                charIndex++;
+                setTimeout(recordFrame, speed);
+            }
+            
+            recordFrame();
+        }
+
+        // Helper function to render text with wrapping
+        function renderTextWithWrapping(ctx, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let currentY = y;
+            
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+                
+                if (testWidth > maxWidth && n > 0) {
+                    ctx.fillText(line, x, currentY);
+                    line = words[n] + ' ';
+                    currentY += lineHeight;
+                    
+                    // Handle newlines in original text
+                    if (words[n].includes('\n')) {
+                        const parts = words[n].split('\n');
+                        ctx.fillText(parts[0], x, currentY - lineHeight);
+                        line = parts[1] + ' ';
+                        currentY += lineHeight;
+                    }
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, x, currentY);
+        }
+
+        // Helper function to calculate cursor X position
+        function calculateCursorX(ctx, text, x, maxWidth) {
+            const lines = text.split('\n');
+            const lastLine = lines[lines.length - 1];
+            const metrics = ctx.measureText(lastLine);
+            return Math.min(x + metrics.width, x + maxWidth - 10);
+        }
+
+        // Helper function to calculate cursor Y position
+        function calculateCursorY(ctx, text, x, maxWidth, lineHeight) {
+            const lines = text.split('\n');
+            return x + (lines.length - 1) * lineHeight;
+        }
+
+        // Helper function to load external scripts
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                if (document.querySelector(`script[src="${src}"]`)) {
+                    resolve();
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
         }
 
         // شروع خودکار با متن نمونه هنگام بارگذاری صفحه
