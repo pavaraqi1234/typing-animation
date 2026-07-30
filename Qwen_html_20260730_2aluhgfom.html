@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تایپینگ انیمیشن ساز</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tahoma', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+            white-space: pre-wrap;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select, input[type="number"], input[type="color"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .preview-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .preview-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #typingArea {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            min-height: 300px;
+            background: #f8f9fa;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #typedText {
+            line-height: 1.8;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .font-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ تایپینگ انیمیشن ساز ✨</h1>
+        
+        <div class="controls">
+            <div class="form-group">
+                <label for="textInput">متن خود را وارد کنید:</label>
+                <textarea id="textInput" placeholder="متن مورد نظر خود را اینجا بنویسید...">به وبلاگ پاوارقیها خوش آمدید!
+
+این یک نمونه متن برای تست انیمیشن تایپینگ است.
+
+شما می‌توانید از اینتر برای ایجاد خطوط جدید استفاده کنید.</textarea>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="fontSelect">انتخاب فونت:</label>
+                    <select id="fontSelect">
+                        <option value="Tahoma">Tahoma</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Impact">Impact</option>
+                        <option value="Comic Sans MS">Comic Sans MS</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="customFont">آپلود فونت شخصی (اختیاری):</label>
+                    <input type="file" id="customFont" accept=".ttf,.otf,.woff,.woff2">
+                    <div class="font-info">فرمت‌های مجاز: TTF, OTF, WOFF, WOFF2</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fontSize">اندازه فونت (پیکسل):</label>
+                    <input type="number" id="fontSize" value="24" min="12" max="72">
+                </div>
+
+                <div class="form-group">
+                    <label for="typingSpeed">سرعت تایپ (میلی‌ثانیه):</label>
+                    <input type="number" id="typingSpeed" value="100" min="20" max="500">
+                </div>
+
+                <div class="form-group">
+                    <label for="textColor">رنگ متن:</label>
+                    <input type="color" id="textColor" value="#333333">
+                </div>
+
+                <div class="form-group">
+                    <label for="bgColor">رنگ پس‌زمینه:</label>
+                    <input type="color" id="bgColor" value="#f8f9fa">
+                </div>
+
+                <div class="form-group">
+                    <label for="areaWidth">عرض ناحیه نمایش (پیکسل):</label>
+                    <input type="number" id="areaWidth" value="800" min="300" max="1200">
+                </div>
+
+                <div class="form-group">
+                    <label for="areaHeight">ارتفاع ناحیه نمایش (پیکسل):</label>
+                    <input type="number" id="areaHeight" value="400" min="200" max="800">
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button onclick="startTyping()">▶ شروع انیمیشن</button>
+                <button class="btn-secondary" onclick="stopTyping()">⏹ توقف</button>
+                <button class="btn-secondary" onclick="clearText()">🗑 پاک کردن</button>
+                <button class="btn-success" onclick="saveAsHTML()">💾 ذخیره به صورت HTML</button>
+            </div>
+        </div>
+
+        <div class="preview-container">
+            <div class="preview-header">
+                <span class="preview-title">پیش‌نمایش:</span>
+            </div>
+            <div id="typingArea">
+                <div id="typedText"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let typingInterval = null;
+        let currentText = '';
+        let charIndex = 0;
+        let customFontData = null;
+        let customFontName = null;
+
+        // مدیریت آپلود فونت شخصی
+        document.getElementById('customFont').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    customFontData = event.target.result;
+                    customFontName = 'CustomFont_' + Date.now();
+                    
+                    // ایجاد استایل برای فونت سفارشی
+                    const style = document.createElement('style');
+                    style.id = 'customFontStyle';
+                    style.textContent = `
+                        @font-face {
+                            font-family: '${customFontName}';
+                            src: url('${customFontData}') format('${getFileFormat(file.name)}');
+                        }
+                    `;
+                    
+                    // حذف استایل قبلی اگر وجود دارد
+                    const oldStyle = document.getElementById('customFontStyle');
+                    if (oldStyle) {
+                        oldStyle.remove();
+                    }
+                    
+                    document.head.appendChild(style);
+                    
+                    // اضافه کردن فونت به لیست انتخاب
+                    const fontSelect = document.getElementById('fontSelect');
+                    
+                    // بررسی اینکه آیا گزینه Custom Font وجود دارد
+                    let customOption = fontSelect.querySelector('option[value="' + customFontName + '"]');
+                    if (!customOption) {
+                        customOption = document.createElement('option');
+                        customOption.value = customFontName;
+                        customOption.text = 'فونت سفارشی (' + file.name + ')';
+                        fontSelect.add(customOption);
+                    } else {
+                        customOption.text = 'فونت سفارشی (' + file.name + ')';
+                    }
+                    
+                    // انتخاب فونت سفارشی
+                    fontSelect.value = customFontName;
+                    
+                    alert('فونت با موفقیت بارگذاری شد!');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function getFileFormat(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const formats = {
+                'ttf': 'truetype',
+                'otf': 'opentype',
+                'woff': 'woff',
+                'woff2': 'woff2'
+            };
+            return formats[ext] || 'truetype';
+        }
+
+        function startTyping() {
+            // متوقف کردن انیمیشن قبلی اگر وجود دارد
+            stopTyping();
+            
+            const text = document.getElementById('textInput').value;
+            const font = document.getElementById('fontSelect').value;
+            const fontSize = document.getElementById('fontSize').value;
+            const speed = document.getElementById('typingSpeed').value;
+            const textColor = document.getElementById('textColor').value;
+            const bgColor = document.getElementById('bgColor').value;
+            const width = document.getElementById('areaWidth').value;
+            const height = document.getElementById('areaHeight').value;
+            
+            // اعمال تنظیمات
+            const typingArea = document.getElementById('typingArea');
+            const typedText = document.getElementById('typedText');
+            
+            typingArea.style.width = width + 'px';
+            typingArea.style.height = height + 'px';
+            typingArea.style.backgroundColor = bgColor;
+            
+            typedText.style.fontFamily = font;
+            typedText.style.fontSize = fontSize + 'px';
+            typedText.style.color = textColor;
+            typedText.style.lineHeight = '1.8';
+            typedText.style.whiteSpace = 'pre-wrap'; // حفظ خطوط جدید
+            
+            // شروع انیمیشن تایپینگ
+            currentText = text;
+            charIndex = 0;
+            typedText.innerHTML = '';
+            
+            typingInterval = setInterval(() => {
+                if (charIndex < currentText.length) {
+                    const char = currentText.charAt(charIndex);
+                    // تبدیل کاراکترهای خاص به HTML
+                    if (char === '\n') {
+                        typedText.innerHTML += '<br>';
+                    } else if (char === ' ') {
+                        typedText.innerHTML += '&nbsp;';
+                    } else {
+                        typedText.innerHTML += char;
+                    }
+                    charIndex++;
+                } else {
+                    clearInterval(typingInterval);
+                    typingInterval = null;
+                }
+            }, speed);
+        }
+
+        function stopTyping() {
+            if (typingInterval) {
+                clearInterval(typingInterval);
+                typingInterval = null;
+            }
+        }
+
+        function clearText() {
+            stopTyping();
+            document.getElementById('typedText').innerHTML = '';
+            document.getElementById('textInput').value = '';
+            charIndex = 0;
+        }
+
+        function saveAsHTML() {
+            const text = document.getElementById('textInput').value;
+            const font = document.getElementById('fontSelect').value;
+            const fontSize = document.getElementById('fontSize').value;
+            const textColor = document.getElementById('textColor').value;
+            const bgColor = document.getElementById('bgColor').value;
+            const width = document.getElementById('areaWidth').value;
+            const height = document.getElementById('areaHeight').value;
+            const speed = document.getElementById('typingSpeed').value;
+            
+            // آماده‌سازی فونت سفارشی برای ذخیره
+            let fontFaceCSS = '';
+            let fontFamily = font;
+            
+            if (customFontData && font.startsWith('CustomFont_')) {
+                const fileInput = document.getElementById('customFont');
+                const fileName = fileInput.files[0] ? fileInput.files[0].name : 'custom-font';
+                const format = getFileFormat(fileName);
+                
+                fontFaceCSS = `
+        @font-face {
+            font-family: 'CustomFont';
+            src: url('${customFontData}') format('${format}');
+        }
+                `;
+                fontFamily = 'CustomFont';
+            }
+            
+            const htmlContent = `<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>انیمیشن تایپینگ</title>
+    <style>${fontFaceCSS}
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+        }
+        #typingArea {
+            width: ${width}px;
+            height: ${height}px;
+            background: ${bgColor};
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        #typedText {
+            font-family: '${fontFamily}', sans-serif;
+            font-size: ${fontSize}px;
+            color: ${textColor};
+            line-height: 1.8;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div id="typingArea">
+        <div id="typedText"></div>
+    </div>
+    
+    <script>
+        const text = \`${text.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`;
+        const speed = ${speed};
+        let charIndex = 0;
+        const typedText = document.getElementById('typedText');
+        
+        function typeWriter() {
+            if (charIndex < text.length) {
+                const char = text.charAt(charIndex);
+                if (char === '\\n') {
+                    typedText.innerHTML += '<br>';
+                } else if (char === ' ') {
+                    typedText.innerHTML += '&nbsp;';
+                } else {
+                    typedText.innerHTML += char;
+                }
+                charIndex++;
+                setTimeout(typeWriter, speed);
+            }
+        }
+        
+        window.onload = typeWriter;
+    <\/script>
+</body>
+</html>`;
+            
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'typing-animation.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('فایل HTML با موفقیت ذخیره شد!');
+        }
+
+        // شروع خودکار با متن نمونه هنگام بارگذاری صفحه
+        window.onload = function() {
+            startTyping();
+        };
+    </script>
+</body>
+</html>
