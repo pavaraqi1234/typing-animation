@@ -21,7 +21,7 @@ export function useTypingAnimation({
     displayedText: '',
   });
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   const reset = useCallback(() => {
     if (timerRef.current) {
